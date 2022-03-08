@@ -1,5 +1,9 @@
 # 아키드로우 사용자 추천시스템
 
+## Contributor
+  - 유치영
+  - 이루오
+
 ## 파일설명
   - `data_preprocess.py` : 데이터 전처리 코드
   - `contents-based.ipynb` : count vectorizer 콘텐츠 기반 필터링을 사용하여 cold-start 문제를 해결하기 위한 초기 유저에 대응
