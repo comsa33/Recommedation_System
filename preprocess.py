@@ -54,8 +54,8 @@ class Preprocess:
         templates['items'] = templates['items'].apply(self.get_productId)
         
         # find_category_id_preprocess
-        cat_df = find_category_df(self.category) 
-        cat_df2 = find_category_df(cat_df)
+        cat_df = self.find_category_df(self.category) 
+        cat_df2 = self.find_category_df(cat_df)
         category_df = pd.concat([cat_df, cat_df2], ignore_index=True)
         category_df = pd.merge(self.category[['name', '_id']], category_df, left_on='_id', right_on='parentId').rename(columns={'_id_y' : '_id'}).drop(columns=['_id_x'])
         
