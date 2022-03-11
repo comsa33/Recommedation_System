@@ -1,15 +1,34 @@
+import pandas as pd
+import json
+
 class Preprocess:
     
-    def __init__(self, best, item, products, category):
-        self.best = self.read_json(best)
-        self.item = self.read_json(item)
-        self.products = self.read_json(products).drop_duplicates('_id') # products json duplicated deleted
-        self.category = self.read_json2(category).reset_index(drop=True)
-        self.best_item, self.products_4, self.products_b = self.preprocess(self.best, self.item, self.products, self.category)
+    def __init__(self, best, item, products, category, style_ths=0.1):
+        """
+        style_ths : top_style_predictions 에서 범위 조절 (e.g. 0.1 이상으로 예측 점수를 받은 스타일만 받아옴 - maximum 3개)
+        """
+        self.style_ths = style_ths
+        self.style_ths_name = str(style_ths)[-1]
+        
+        self.best = best
+        self.item = item
+        self.products = products
+        self.category = category
+        
+        self.best_json = self.read_json(best)
+        self.item_json = self.read_json(item)
+        self.products_json = self.read_json(products).drop_duplicates('_id') # products json duplicated deleted
+        self.category_json = self.read_json2(category).reset_index(drop=True)
+        self.best_item, self.products_4, self.products_b = self.preprocess(self.best_json, 
+                                                                           self.item_json, 
+                                                                           self.products_json, 
+                                                                           self.category_json)
+
+        
         
     def read_json(self,json_file):
         df = pd.DataFrame()
-        if json_file != products:  
+        if json_file != self.products:  
             for file in json_file:
                 x = pd.read_json(file)
                 df = pd.concat([df, x])
@@ -54,18 +73,18 @@ class Preprocess:
         templates['items'] = templates['items'].apply(self.get_productId)
         
         # find_category_id_preprocess
-        cat_df = self.find_category_df(self.category) 
+        cat_df = self.find_category_df(self.category_json) 
         cat_df2 = self.find_category_df(cat_df)
         category_df = pd.concat([cat_df, cat_df2], ignore_index=True)
-        category_df = pd.merge(self.category[['name', '_id']], category_df, left_on='_id', right_on='parentId').rename(columns={'_id_y' : '_id'}).drop(columns=['_id_x'])
+        category_df = pd.merge(self.category_json[['name', '_id']], category_df, left_on='_id', right_on='parentId').rename(columns={'_id_y' : '_id'}).drop(columns=['_id_x'])
         
         # edit new columns style_name, style_score > 0.1 
-        templates['top_style_1'] = templates['style_predictions'].apply(lambda x: sorted([(name, score) for name, score in x.items() if score > 0.1], key=lambda x: x[1], reverse=True)[:3])
+        templates[f'top_style_{self.style_ths_name}'] = templates['style_predictions'].apply(lambda x: sorted([(name, score) for name, score in x.items() if score > self.style_ths], key=lambda x: x[1], reverse=True)[:3])
         # del list, style score
-        templates['top_style_1'] = templates['top_style_1'].apply(lambda x: [name for name, score in x])
+        templates[f'top_style_{self.style_ths_name}'] = templates[f'top_style_{self.style_ths_name}'].apply(lambda x: [name for name, score in x])
         # Edit best_item['items'] = list(values) -> values
         items_stack = pd.DataFrame(templates['items'].apply(lambda x: pd.Series(x)).stack()).reset_index(1, drop=True) 
-        products_df = pd.merge(templates[['enterprise_id', 'top_style_1', 'top_style', 'projectId', 'awesome_score']].reset_index(), items_stack.reset_index(), on='index').drop(['index'], axis=1).rename(columns = {0:'product_id'})
+        products_df = pd.merge(templates[['enterprise_id', f'top_style_{self.style_ths_name}', 'top_style', 'projectId', 'awesome_score']].reset_index(), items_stack.reset_index(), on='index').drop(['index'], axis=1).rename(columns = {0:'product_id'})
         prod_tags_df = products[['_id', 'tags', 'name', 'images', 'categories']]
         products_df = pd.merge(products_df, prod_tags_df, left_on='product_id', right_on='_id').drop(['_id'], axis=1)
         products_df = pd.merge(products_df, products_df['product_id'].value_counts().reset_index(),left_on='product_id',right_on='index').rename(columns = {'product_id_x': 'product_id','product_id_y':'use_count'}).drop(['index'], axis=1)
