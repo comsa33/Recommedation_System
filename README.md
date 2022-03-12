@@ -1,8 +1,8 @@
 # 아키드로우 사용자 추천시스템
 ## Environment
   - MacOS, Windows
-  - Python 3.8 (세부 라이브러리는 추후 `requirements.txt` 파일 커밋 예정)
-  - Jupyter Notebook, Jupyter Lab
+  - Python 3.8
+  - Jupyter Notebook
   - GitHub
 
 ## Contributor
