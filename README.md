@@ -15,6 +15,15 @@
     - 데이터 입력부터 추천결과까지 end2end 자동화 모델을 위해 데이터클래스 + 모델클래스 파일 취합
     - 고객 맞춤형 추천을 위해 모델 최적화 및 검색 필터링 정확도, 속도 개선
 
+## 사용법
+  ```
+  conda create -n recommend python=3.8
+  conda activate recommend
+  cd Recommendation_system
+  python -m pip install -r requirements.txt
+  python run.py
+  ```
+
 ## 파일설명
   - `preprocess.py` : 데이터 전처리 클래스
   - `run.py` (실행 파일) : 콘텐츠 기반 추천 검색 필터링
