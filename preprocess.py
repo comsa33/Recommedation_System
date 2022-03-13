@@ -8,6 +8,7 @@ class Preprocess:
         """
         style_ths : top_style_predictions 에서 범위 조절 (e.g. 0.1 이상으로 예측 점수를 받은 스타일만 받아옴 - maximum 3개)
         """
+        
         self.style_ths = style_ths
         self.style_ths_name = str(style_ths)[-1]
         
@@ -16,9 +17,9 @@ class Preprocess:
         self.products = products
         self.category = category
         
-        self.best_json = self.read_json(best)
-        self.item_json = self.read_json(item)
-        self.products_json = self.read_json(products).drop_duplicates('_id') # products json duplicated deleted
+        self.best_json = self.read_json(best).reset_index(drop=True)
+        self.item_json = self.read_json(item).reset_index(drop=True)
+        self.products_json = self.read_json(products).reset_index(drop=True) #.drop_duplicates('_id') # products json duplicated deleted
         self.category_json = self.read_json2(category).reset_index(drop=True)
         self.best_item, self.category, self.products_4, self.products_b = self.preprocess(self.best_json, 
                                                                            self.item_json, 
@@ -55,6 +56,7 @@ class Preprocess:
         for item in items_list:
             new_list.append(item['productId'])
         return new_list
+
     
 
     def preprocess(self, best, item, products, category):
@@ -93,7 +95,6 @@ class Preprocess:
                                on='index').drop(['index'], axis=1).rename(columns = {0:'product_id'})
         
         products_df = products_df.drop_duplicates()
-        
         prod_tags_df = products[['_id', 'tags', 'name', 'images', 'categories']]
         
         #products_df = best+item , prod_tags_df = self.products

@@ -101,6 +101,7 @@ class SEARCH_RECOMMEND:
         print()
         return sim_score
     
+    
     def search_product(self, prod, topn=10, algo='sorensen'):
         """
         # 사용자 선택한 아이템/아이템 목록으로부터 유사도를 통해 아이템 추천
@@ -114,7 +115,11 @@ class SEARCH_RECOMMEND:
         id_ = self.add_item_in_user_item_set(prod)
         prod_cat = self.df_[self.df_['product_id'] == id_]['category'].values[0]
         
-        print(f"검색 아이템이 해당한 프로젝트 ID : {self.df_[self.df_['name'] == prod]['projectId'].values[0]}")
+        # 사용자가 현재 선택한 아이템이 속해 있는 project_id 가져오기
+        self.project_id = self.df_[self.df_['name'] == prod].sort_values(by='awesome_score', 
+                                                                                  ascending=False)['projectId'].values[0]
+        
+        print(f"검색 아이템이 해당한 프로젝트 ID : {self.project_id}")
         
         # 사용자의 정보가 없는 경우 => 단일 아이템에 대한 태그 기반 추천 검색
         if self.cold_start:
@@ -158,6 +163,7 @@ class SEARCH_RECOMMEND:
         result_df = result_df.sort_values(by='similarity', ascending=False).reset_index()[:topn] 
         
         self.result = result_df
+        self.result_id_list = self.result['product_id'].tolist()
         # 추천 검색 결과 저장 및 보여주기 => csv 파일, png 파일로 저장
         self.save_result(prod, topn=topn)
         
@@ -209,7 +215,9 @@ class SEARCH_RECOMMEND:
         # 추천된 결과 DataFrame => csv 파일로 내보내기
         self.result.to_csv(f'./result_{prod}/result_{prod}.csv')
         
-        
+
+    
+    
 if __name__ == '__main__':
     import random
     import warnings
