@@ -164,8 +164,7 @@ class Preprocess:
                                category_df, 
                                on='product_id')
         
-        products_df['projectId'] = products_df['projectId'].apply(lambda x: x.
-                                                                  ())
+        products_df['projectId'] = products_df['projectId'].apply(lambda x: x.lower())
         products_df_4 = products_df[products_df['enterpriseId'] == ent1].reset_index(drop=True)
         products_df_b = products_df[products_df['enterpriseId'] == ent2].reset_index(drop=True)
         
