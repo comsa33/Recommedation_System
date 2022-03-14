@@ -101,40 +101,45 @@ class SEARCH_RECOMMEND:
         print()
         return sim_score
     
-    
-    def search_product(self, prod, topn=10, algo='sorensen'):
+    def search_product(self, prod, topn=10, algo='sorensen', from_product_id='True'):
         """
         # 사용자 선택한 아이템/아이템 목록으로부터 유사도를 통해 아이템 추천
         
         prod : string, 아이템 이름
         topn : int, 유사도 상위 n개의 아이템 추천
         algo : 'sorensen' - 토큰 기반 거리 유사도 알고리즘, 'ncd' - 문장 압축을 통한 유사도 알고리즘
+        from_product_id : boolean, 제품 아이디 기반으로 검색할지에 대한 파라미터
         """
-        # 아이템을 사용자 아이템 목록에 추가
-        # declare id, category of searching product
-        id_ = self.add_item_in_user_item_set(prod)
-        prod_cat = self.df_[self.df_['product_id'] == id_]['category'].values[0]
         
-        # 사용자가 현재 선택한 아이템이 속해 있는 project_id 가져오기
-        self.project_id = self.df_[self.df_['name'] == prod].sort_values(by='awesome_score', 
-                                                                                  ascending=False)['projectId'].values[0]
+        if from_product_id:
+            # 아이템을 사용자 아이템 목록에 추가
+            # declare id, category of searching product
+            id_ = self.add_item_in_user_item_set(prod)
+            prod_cat = self.df_[self.df_['product_id'] == id_]['category'].values[0]
+
+            # 사용자가 현재 선택한 아이템이 속해 있는 project_id 가져오기
+            self.project_id = self.df_[self.df_['name'] == prod].sort_values(by='awesome_score', 
+                                                                                      ascending=False)['projectId'].values[0]
+
+            print(f"검색 아이템이 해당한 프로젝트 ID : {self.project_id}")
         
-        print(f"검색 아이템이 해당한 프로젝트 ID : {self.project_id}")
+            # 사용자의 정보가 없는 경우 => 단일 아이템에 대한 태그 기반 추천 검색
+            if self.cold_start:
+                # retrieve the product tag from the input product id
+                # 동일 아이템이 여러 전문가에 사용될 경우 => awesome_score 가 더 높은 점수를 받은 아이템의 new_tag를 가져옴
+                search_prod_tag = self.df_[self.df_['product_id'] == id_].sort_values(by='awesome_score', 
+                                                                                      ascending=False)['new_tag'].values[0]
+            # 사용자 아이템 목록이 있는 경우 => 사용자가 이미 배치한 기존 아이템들까지 포함한 복수의 아이템에 대한 태그 기반 추천 검색
+            else:
+                search_prod_tag = ''
+                for existing_item_id, _ in self.user_item_set:
+                    temp_id = self.df_[self.df_['product_id'] == existing_item_id].sort_values(by='awesome_score', 
+                                                                                               ascending=False)['new_tag'].values[0]
+                    search_prod_tag += temp_id+' '
+                search_prod_tag = search_prod_tag[:-1]
         
-        # 사용자의 정보가 없는 경우 => 단일 아이템에 대한 태그 기반 추천 검색
-        if self.cold_start:
-            # retrieve the product tag from the input product id
-            # 동일 아이템이 여러 전문가에 사용될 경우 => awesome_score 가 더 높은 점수를 받은 아이템의 new_tag를 가져옴
-            search_prod_tag = self.df_[self.df_['product_id'] == id_].sort_values(by='awesome_score', 
-                                                                                  ascending=False)['new_tag'].values[0]
-        # 사용자 아이템 목록이 있는 경우 => 사용자가 이미 배치한 기존 아이템들까지 포함한 복수의 아이템에 대한 태그 기반 추천 검색
         else:
-            search_prod_tag = ''
-            for existing_item_id, _ in self.user_item_set:
-                temp_id = self.df_[self.df_['product_id'] == existing_item_id].sort_values(by='awesome_score', 
-                                                                                           ascending=False)['new_tag'].values[0]
-                search_prod_tag += temp_id+' '
-            search_prod_tag = search_prod_tag[:-1]
+            search_prod_tag = prod
             
         # 해당 아이템-다른 아이템 간 유사도 계산
         sim_score = self.get_similarity_score(search_prod_tag, algo=algo)
@@ -215,8 +220,6 @@ class SEARCH_RECOMMEND:
         self.result.to_csv(f'./result_{prod}/result_{prod}.csv')
         
 
-    
-    
 if __name__ == '__main__':
     import random
     import warnings
@@ -254,15 +257,30 @@ if __name__ == '__main__':
             break
         else:
             print("입력된 정보가 정확하지 않습니다. 다시 입력해주세요.")
-        
+    
+    from_product_id_input = input("[1] 아이템 이름으로 추천 검색\t[2] 카테고리 별 추천 검색")
+    if from_product_id_input == '1':
+        from_product_id = True
+    elif from_product_id_input == '2':
+        from_product_id = False
+    else:
+        from_product_id = True
+        print("입력이 없어 '아이템 이름으로 추천 검색'을 합니다.'")
+    
     while True:
-        prod = input("선택한 제품명을 입력하세요.\n(랜덤 선택은 입력 없이 enter, 프로그램 종료는 x)")
+        if from_product_id:
+            prod = input("선택한 제품명을 입력하세요.\n(랜덤 선택은 입력 없이 enter, 프로그램 종료는 x)")
+            
+        else:
+            prod = input("검색어를 입력하세요.\n(랜덤 선택은 입력 없이 enter, 프로그램 종료는 x)")
+        
+        if not prod:
+                prod = random.choice(item_name_list)
+                print(f"입력이 없어 검색할 제품명 [{prod}] 을 랜덤으로 선택합니다.")    
         if prod == 'x':
             print("추천 시스템을 종료합니다.\n감사합니다!")
             break
-        if not prod:
-            prod = random.choice(item_name_list)
-            print(f"입력이 없어 검색할 제품명 [{prod}] 을 랜덤으로 선택합니다.")
+        
         algo_choice = input("검색 알고리즘을 선택하세요.\n[1] Sorensen (토큰화 기반 - 빠른 알고리즘)\t[2] EntropyNCD (압축 알고리즘 - 다양한 결과)\n")
         if algo_choice == '1':
             algo = 'sorensen'
@@ -271,7 +289,7 @@ if __name__ == '__main__':
         else:
             algo = 'sorensen'
             print(f'입력이 없거나 잘못되어 default 값 [{algo}] 으로 설정합니다.')
-        search_engine.search_product(prod, topn=10, algo=algo)
+        search_engine.search_product(prod, topn=10, algo=algo, from_product_id=from_product_id)
     
     
     
