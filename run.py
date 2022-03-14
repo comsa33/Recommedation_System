@@ -149,11 +149,10 @@ class SEARCH_RECOMMEND:
         result_df['similarity'] = sim_score
         
         # filtering : 정교한 추천 결과를 위한 검색 필터링 추가
-        result_df = result_df[result_df['product_id']!=id_]  # 사용자가 선택한 아이템과 동일한 아이템 제거
         result_df = result_df.drop_duplicates(['product_id'])  # 중복된 아이템 제거
         
         # 사용자가 이미 배치한 아이템 혹은 같은 카테고리의 아이템들은 추천목록에서 제거
-        if len(self.user_item_set) > 1:
+        if len(self.user_item_set) >= 1:
             print("!!사용자가 이미 선택한 아이템, 같은 카테고리 아이템들은 추천목록에서 제거!!")
             for existing_item_id, existing_item_cat in self.user_item_set:
                 result_df = result_df[result_df['product_id']!=existing_item_id]
