@@ -189,14 +189,15 @@ class SEARCH_RECOMMEND:
         print()
         
         # 검색 결과를 저장할 경로 만들기
-        if not os.path.exists(f'result_{prod}'):
-            os.makedirs(f'result_{prod}')
+        result_path = f'result_{prod}'
+        if not os.path.exists(result_path):
+            os.makedirs(result_path)
         
         # 사용자가 현재 선택한 아이템 이미지 저장
         try:
             prod_res = requests.get(self.df_[self.df_['name'] == prod]['images'].values[0][0])
             img = Image.open(BytesIO(prod_res.content))
-            img.save(f'./result_{prod}/{self.user_item_len}_{prod}.png')
+            img.save(result_path+f'/{self.user_item_len}_{prod}.png')
         except:
             print('사용자가 선택한 아이템 이미지 없음\n')
 
@@ -211,13 +212,13 @@ class SEARCH_RECOMMEND:
             try:
                 res = requests.get(img_url[0])
                 rec_img = Image.open(BytesIO(res.content))
-                rec_img.save(f'./result_{prod}/{self.user_item_len}_{name}.png')
+                rec_img.save(result_path+f'/{self.user_item_len}_{name}.png')
             except:
                 pass
             i += 1
         
         # 추천된 결과 DataFrame => csv 파일로 내보내기
-        self.result.to_csv(f'./result_{prod}/result_{prod}.csv')
+        self.result.to_csv(result_path+f'/result_{prod}.csv')
         
 
 if __name__ == '__main__':
@@ -228,11 +229,11 @@ if __name__ == '__main__':
     warnings.filterwarnings(action='ignore')
     
     # 데이터 경로 지정
-    base_bath = '2022-03-07/'  # 데이터 기본 경로 (필요시 변경)
+    base_bath = '2022-03-14/'  # 데이터 기본 경로 (필요시 변경)
     best = glob(base_bath+'best*.json')
     item = glob(base_bath+'item*.json')
-    products = glob(base_bath+'products*.json')
-    category = glob(base_bath+'categories.json')
+    products = glob(base_bath+'prod*.json')
+    category = glob(base_bath+'cate*.json')
     
     # json => DataFrame 데이터 불러오기
     print("데이터를 불러옵니다.")
