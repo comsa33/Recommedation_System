@@ -23,7 +23,7 @@
   python -m pip install -r requirements.txt
   python run.py
   ```
-  - 추천 결과 목록과 추천된 상품 이미지는 동일 디렉터리에 `result_{검색아이템명}/` 디렉터리를 생성 후 하위에 `.png`,`.csv` 파일로 저장
+  - 추천 결과 목록과 추천된 상품 이미지는 동일 디렉터리에 `result_{검색아이템명}/` 디렉터리를 자동생성 후 하위에 `.png`,`.csv` 파일로 저장
 
 ## 파일설명
   - `preprocess.py` : 데이터 전처리 클래스
