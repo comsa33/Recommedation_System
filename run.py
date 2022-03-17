@@ -33,10 +33,10 @@ class SEARCH_RECOMMEND:
 
         proj_ids = df.groupby('product_id')['projectId'].agg(lambda x: list(set(x))).reset_index().rename(columns={'projectId':'project_ids'})
         products_df = df.sort_values(by='awesome_score', ascending=False).drop_duplicates('product_id').reset_index(drop=True)
-        products_df = df.join(proj_ids.set_index('product_id'), on='product_id')
+        products_df = products_df.join(proj_ids.set_index('product_id'), on='product_id')
         products_df['project_ids_str'] = products_df['project_ids'].apply(lambda x: ' '.join(x))
-        products_df['weighed_project_id'] = (df.projectId.apply(lambda x : x+' ') * df.top_score.apply(lambda x : int(x*10))).tolist()
-        products_df['weighed_style'] = (df.top_style.apply(lambda x : x+' ') * df.top_score.apply(lambda x : int(x*10))).tolist()
+        products_df['weighed_project_id'] = (products_df.projectId.apply(lambda x : x+' ') * products_df.top_score.apply(lambda x : int(x*10))).tolist()
+        products_df['weighed_style'] = (products_df.top_style.apply(lambda x : x+' ') * products_df.top_score.apply(lambda x : int(x*10))).tolist()
         products_df['new_tag'] = list(
                             zip(
                                 products_df[f'top_style_{self.style_ths_str}'].tolist(), 
