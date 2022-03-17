@@ -88,7 +88,7 @@ class Preprocess:
         # pd.merge(templates, items_stack)
         products_df = pd.merge(templates[['enterprise_id', 
                                           f'top_style_{self.style_ths_name}', 
-                                          'top_style', 
+                                          'top_style', 'top_score',
                                           'projectId', 
                                           'awesome_score']].reset_index(), 
                                items_stack.reset_index(), 
@@ -159,16 +159,16 @@ class Preprocess:
                                 left_on = '_id',
                                 right_on = 'product_id').drop(['_id'], axis=1)
         #사용할 컬럼만 추출해서 merge
-        products_df = pd.merge(products_df[['projectId', 'top_style_1', 
+        products_df = pd.merge(products_df[['projectId', 'top_style_1', 'top_style', 'top_score',
                                             'awesome_score', 'product_id', 'use_count']], 
                                category_df, 
                                on='product_id')
         
-        products_df['projectId'] = products_df['projectId'].apply(lambda x: x.lower())
+        # products_df['projectId'] = products_df['projectId'].apply(lambda x: x.lower())
         products_df_4 = products_df[products_df['enterpriseId'] == ent1].reset_index(drop=True)
         products_df_b = products_df[products_df['enterpriseId'] == ent2].reset_index(drop=True)
         
         # 데이터를 검색 할 때 소문자, 대문자가 존재하기에 전체를 소문자로 적용
-        templates['projectId'] = templates['projectId'].apply(lambda x: x.lower())
+        # templates['projectId'] = templates['projectId'].apply(lambda x: x.lower())
         
         return templates, category_df, products_df_4, products_df_b
