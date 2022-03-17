@@ -286,11 +286,11 @@ if __name__ == '__main__':
     while True:
         ent = int(input("Enterprise_Id 를 선택하세요.\n[1] 421B6D0E746C4E6D\t[2] B57D4F97C0E44A11\n"))
         if ent == 1:
-            search_engine = SEARCH_RECOMMEND(products_df_4, qval=3)
+            search_engine = SEARCH_RECOMMEND(products_df_4, qval=None)
             item_name_list = DATA.products_4.drop_duplicates('name')['name'].tolist()
             break
         elif ent == 2:
-            search_engine = SEARCH_RECOMMEND(products_df_b, qval=3)
+            search_engine = SEARCH_RECOMMEND(products_df_b, qval=None)
             item_name_list = DATA.products_b.drop_duplicates('name')['name'].tolist()
             break
         else:
