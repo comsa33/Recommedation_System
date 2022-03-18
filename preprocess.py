@@ -19,7 +19,7 @@ class Preprocess:
         
         self.best_json = self.read_json(best).reset_index(drop=True)
         self.item_json = self.read_json(item).reset_index(drop=True)
-        self.products_json = self.read_json(products).reset_index(drop=True) #.drop_duplicates('_id') # products json duplicated deleted
+        self.products_json = self.read_json(products).reset_index(drop=True) # products json duplicated deleted
         self.category_json = self.read_json2(category).reset_index(drop=True)
         self.best_item, self.category, self.products_4, self.products_b = self.preprocess(self.best_json, 
                                                                            self.item_json, 
@@ -34,7 +34,7 @@ class Preprocess:
                 x = pd.read_json(file)
                 df = pd.concat([df, x])
         else:
-            # why -> products json duplicated 
+            # why -> products json Transpose
             for file in json_file:
                 x = pd.read_json(file).T.reset_index(drop=True)    
                 df = pd.concat([df, x])
@@ -120,23 +120,39 @@ class Preprocess:
         # find_category_id_preprocess
         cat_df = self.category_json
         total_cat_ids = []
+        total_cat_names = []
+
         for i in range(len(cat_df)):
             cat_ids = []
+            cat_names = []
             for child in cat_df['children'][i]:
                 #category['children'][_id] 값을 찾기위함
                 cat_ids.append(child['_id'])
+                cat_names.append(child['name'])
+
                 for grand_child in child['children']:
                     # category['children']['children'][_id] 값을 찾기위함
                     cat_ids.append(grand_child['_id'])
+                    cat_names.append(child['name'])
+
             total_cat_ids.append(cat_ids)
+            total_cat_names.append(cat_names)
+
         cat_df['cat_ids'] = total_cat_ids
-        cat_ids_stack = pd.DataFrame(cat_df['cat_ids'].apply(
-            lambda x: pd.Series(x)).stack()).reset_index(1, drop=True) # 리스트로 찾아온 값을 리스트에서 빼오는 lambda 적용
-        
-        # cate_ids_stack = cat_df['cate_ids'] 리스트 된 값들을 빼내온 DataFrame
+        cat_df['cat_names'] = total_cat_names
+
+        cat_ids_stack = pd.DataFrame(cat_df['cat_ids'].apply(lambda x: pd.Series(x)).stack()).reset_index(1, drop=True) # 리스트로 찾아온 값을 리스트에서 빼오는 lambda 적용
+        cat_names_stack = pd.DataFrame(cat_df['cat_names'].apply(lambda x: pd.Series(x)).stack()).reset_index(1, drop=True) # 리스트로 찾아온 값을 리스트에서 빼오는 lambda 적용
+        cat_ids_names_stack = pd.concat((cat_ids_stack, cat_names_stack), axis=1)
+
+        # cat_ids_stack = cat_df['cate_ids'] 리스트 된 값들을 빼내온 DataFrame
         cat_df = pd.merge(cat_df[['name']].reset_index(), 
-                   cat_ids_stack.reset_index(), 
-                   on='index').drop(['index'], axis=1).rename(columns = {0:'cat_ids'})
+                   cat_ids_names_stack.reset_index(), 
+                   on='index', how='left').drop(['index'], axis=1)
+
+        cat_df.columns = ['name', 'cat_ids', 'cat_names']
+        
+        # cat_df = cat_df[['name', 'cat_ids', 'cat_names']]
         
         self.products_json['category_name'] = self.products_json['categories'].apply(lambda x: x[0] if len(x) > 0 else np.nan)
         # products_json에서 categories list값들 빼와서 category_name 으로 지정
@@ -155,7 +171,7 @@ class Preprocess:
         
         #사용할 컬럼만 추출해서 merge
         category_df = pd.merge(self.products_json[['_id', 'name', 'tags', 'dimensions', 'images']], 
-                               prod_cat_df[['item_name', 'product_id', 'enterpriseId', 'category']], 
+                               prod_cat_df[['item_name', 'product_id', 'enterpriseId', 'category','cat_names']], 
                                 left_on = '_id',
                                 right_on = 'product_id').drop(['_id'], axis=1)
         #사용할 컬럼만 추출해서 merge
@@ -166,9 +182,13 @@ class Preprocess:
         
         # products_df['projectId'] = products_df['projectId'].apply(lambda x: x.lower())
         products_df_4 = products_df[products_df['enterpriseId'] == ent1].reset_index(drop=True)
-        products_df_b = products_df[products_df['enterpriseId'] == ent2].reset_index(drop=True)
+        door_index = products_df_4[products_df_4['category'] == 'Construction'].index
+        products_df_4 = products_df_4.drop(index=door_index).reset_index(drop=True)
         
-        # 데이터를 검색 할 때 소문자, 대문자가 존재하기에 전체를 소문자로 적용
+        products_df_b = products_df[products_df['enterpriseId'] == ent2].reset_index(drop=True)
+        door_index = products_df_b[products_df_b['category'] == '문/창문'].index
+        products_df_b = products_df_b.drop(index=door_index).reset_index(drop=True)
+        
         # templates['projectId'] = templates['projectId'].apply(lambda x: x.lower())
         
         return templates, category_df, products_df_4, products_df_b

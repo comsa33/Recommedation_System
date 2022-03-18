@@ -173,7 +173,7 @@ class SEARCH_RECOMMEND:
         
         result_df = self.df_.iloc[sim_score_idx][['product_id', 'name', 
                                                   'new_tag', 'projectId', 'project_ids',
-                                                  'images', 'category']]
+                                                  'images', 'category', 'cat_names']]
         result_df['similarity'] = sim_score
         
         # filtering : 정교한 추천 결과를 위한 검색 필터링 추가
@@ -185,7 +185,12 @@ class SEARCH_RECOMMEND:
                 print("!!사용자가 이미 선택한 아이템, 같은 카테고리 아이템들은 추천목록에서 제거!!")
             for existing_item_id, existing_item_cat in self.user_item_set:
                 result_df = result_df[result_df['product_id']!=existing_item_id]
-                result_df = result_df[result_df['category']!=existing_item_cat]
+                
+                if existing_item_cat not in ['Sofas', '소파']:
+                    result_df = result_df[result_df['category']!=existing_item_cat]
+                else:
+                    prod_cat2 = self.df_[self.df_['product_id'] == id_]['cat_names'].values[0]
+                    result_df = result_df[result_df['cat_names']!=prod_cat2]
                 
         # 유사도가 가장 높은 순서대로 정렬 => top-n개 까지 추천 결과 저장
         self.result = result_df.sort_values(by='similarity', ascending=False).reset_index()[:topn] 
