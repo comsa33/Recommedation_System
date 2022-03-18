@@ -152,8 +152,6 @@ class Preprocess:
 
         cat_df.columns = ['name', 'cat_ids', 'cat_names']
         
-        # cat_df = cat_df[['name', 'cat_ids', 'cat_names']]
-        
         self.products_json['category_name'] = self.products_json['categories'].apply(lambda x: x[0] if len(x) > 0 else np.nan)
         # products_json에서 categories list값들 빼와서 category_name 으로 지정
         prod_cat_df = pd.merge(self.products_json[['category_name',
@@ -181,13 +179,21 @@ class Preprocess:
                                on='product_id')
         
         # products_df['projectId'] = products_df['projectId'].apply(lambda x: x.lower())
+        
         products_df_4 = products_df[products_df['enterpriseId'] == ent1].reset_index(drop=True)
-        door_index = products_df_4[products_df_4['category'] == 'Construction'].index
-        products_df_4 = products_df_4.drop(index=door_index).reset_index(drop=True)
+        #Delete useless category 
+        delete_category = ['Construction', 'Appliances', 'Bathroom', 'Kitchen', 'Outdoor']
+        for i in delete_category:    
+            index = products_df_4[products_df_4['category'] == i].index
+            products_df_4 = products_df_4.drop(index=index).reset_index(drop=True)
+        
         
         products_df_b = products_df[products_df['enterpriseId'] == ent2].reset_index(drop=True)
-        door_index = products_df_b[products_df_b['category'] == '문/창문'].index
-        products_df_b = products_df_b.drop(index=door_index).reset_index(drop=True)
+        #Delete useless category 
+        delete_category = ['문/창문', '가전', '주방싱크/욕실', '파티션/구조물']
+        for i in delete_category:    
+            index = products_df_b[products_df_b['category'] == i].index
+            products_df_b = products_df_b.drop(index=index).reset_index(drop=True)
         
         # templates['projectId'] = templates['projectId'].apply(lambda x: x.lower())
         
