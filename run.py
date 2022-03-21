@@ -132,6 +132,8 @@ class SEARCH_RECOMMEND:
         algo : 'sorensen' - 토큰 기반 거리 유사도 알고리즘, 'ncd' - 문장 압축을 통한 유사도 알고리즘
         from_product_id : boolean, 제품 아이디 기반으로 검색할지에 대한 파라미터
         base_path : string, 추천 결과를 저장할 기본 경로 설정
+        save_image : boolean, 추천 결과 이미지를 하위 디렉터리에 저장
+        verbose : boolean, 추천 결과 및 추천 소요시간 등 세부사항을 텍스트로 출력
         """
         
         if from_product_id:
