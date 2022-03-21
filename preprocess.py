@@ -152,6 +152,8 @@ class Preprocess:
 
         cat_df.columns = ['name', 'cat_ids', 'cat_names']
         
+        # cat_df = cat_df[['name', 'cat_ids', 'cat_names']]
+        
         self.products_json['category_name'] = self.products_json['categories'].apply(lambda x: x[0] if len(x) > 0 else np.nan)
         # products_json에서 categories list값들 빼와서 category_name 으로 지정
         prod_cat_df = pd.merge(self.products_json[['category_name',
@@ -187,6 +189,9 @@ class Preprocess:
             index = products_df_4[products_df_4['category'] == i].index
             products_df_4 = products_df_4.drop(index=index).reset_index(drop=True)
         
+        item_count_in_project = products_df_4.groupby(['projectId'])['product_id'].count().reset_index().rename(columns={'product_id':'item_count_in_project'})
+        products_df_4 = pd.merge(products_df_4, item_count_in_project, on='projectId')
+        products_df_4 = products_df_4[products_df_4['item_count_in_project'] > 2].reset_index(drop=True)
         
         products_df_b = products_df[products_df['enterpriseId'] == ent2].reset_index(drop=True)
         #Delete useless category 
@@ -194,7 +199,10 @@ class Preprocess:
         for i in delete_category:    
             index = products_df_b[products_df_b['category'] == i].index
             products_df_b = products_df_b.drop(index=index).reset_index(drop=True)
-        
+            
+        item_count_in_project = products_df_b.groupby(['projectId'])['product_id'].count().reset_index().rename(columns={'product_id':'item_count_in_project'})
+        products_df_b = pd.merge(products_df_b, item_count_in_project, on='projectId')
+        products_df_b = products_df_b[products_df_b['item_count_in_project'] > 2].reset_index(drop=True)
         # templates['projectId'] = templates['projectId'].apply(lambda x: x.lower())
         
         return templates, category_df, products_df_4, products_df_b
