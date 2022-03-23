@@ -28,7 +28,7 @@ class SEARCH_RECOMMEND:
     def preprocess_df(self, df):
         """
         # make new-tag
-        # top3_style, tags, name, projectId 를 하나의 string으로 만들기
+        # top3_style, tags, projectId 를 하나의 string으로 만들기
         """
 
         proj_ids = df.groupby('product_id')['projectId'].agg(lambda x: list(set(x))).reset_index().rename(columns={'projectId':'project_ids'})
@@ -48,9 +48,16 @@ class SEARCH_RECOMMEND:
                             )
         products_df['new_tag'] = products_df['new_tag'].apply(self.reduce_newtag)
         products_df['new_tag'] = products_df['new_tag'].apply(lambda x: ' '.join(x))
-        
+        products_df['color'] = products_df['color'].apply(self.extract_color)
+
         return products_df
     
+    def extract_color(self, x):
+        if x:
+            return x['name']
+        else:
+            return None
+        
     def reduce_newtag(self, x):
         newtag = []
         for tag in x:
@@ -173,7 +180,7 @@ class SEARCH_RECOMMEND:
         sim_score = np.asarray(sim_score)  # [사용자가 선택한 아이템-다른 모든 아이템] 간 유사도 점수
         sim_score_idx = np.arange(len(sim_score)) # 유사도 점수에 대한 인덱스
         
-        result_df = self.df_.iloc[sim_score_idx][['product_id', 'name', 
+        result_df = self.df_.iloc[sim_score_idx][['product_id', 'name', 'color', 
                                                   'new_tag', 'projectId', 'project_ids',
                                                   'images', 'category', 'cat_names']]
         result_df['similarity'] = sim_score
@@ -249,14 +256,22 @@ class SEARCH_RECOMMEND:
 
         # 추천된 아이템 이미지 저장
         i = 1
-        for name, img_url, cat in self.result[['name', 'images', 'category']].values:
+        for name, color, img_url, cat in self.result[['name', 'color', 'images', 'category']].values:
             if verbose:
-                print(f"추천 {i}순위 : {name} - {cat}")
+                if color:
+                    print(f"추천 {i}순위 : {name}({color}) - {cat}")
+                else:
+                    print(f"추천 {i}순위 : {name} - {cat}")
+                    
             name_ = re.sub(r"[^ㄱ-힣0-9a-z ]", "", name.lower())
             try:
                 res = requests.get(img_url[0])
                 rec_img = Image.open(BytesIO(res.content))
-                rec_img.save(result_path+f'/{self.user_item_len}_{name_}.png')
+                if color:
+                    rec_img.save(result_path+f'/{self.user_item_len}_{name_}_{color}.png')
+                else:
+                    rec_img.save(result_path+f'/{self.user_item_len}_{name_}.png')
+                    
             except:
                 pass
             i += 1

@@ -170,7 +170,7 @@ class Preprocess:
         #products_json 에서 13개의 enterprise_id 있기에 원하는 2개의 enterpriseId 값만 추출해서 concat
         
         #사용할 컬럼만 추출해서 merge
-        category_df = pd.merge(self.products_json[['_id', 'name', 'tags', 'dimensions', 'images']], 
+        category_df = pd.merge(self.products_json[['_id', 'name', 'tags', 'color', 'dimensions', 'images']], 
                                prod_cat_df[['item_name', 'product_id', 'enterpriseId', 'category','cat_names']], 
                                 left_on = '_id',
                                 right_on = 'product_id').drop(['_id'], axis=1)
