@@ -34,9 +34,9 @@ class SEARCH_RECOMMEND:
         proj_ids = df.groupby('product_id')['projectId'].agg(lambda x: list(set(x))).reset_index().rename(columns={'projectId':'project_ids'})
         products_df = df.sort_values(by='awesome_score', ascending=False).drop_duplicates('product_id').reset_index(drop=True)
         products_df = products_df.join(proj_ids.set_index('product_id'), on='product_id')
-        products_df['project_ids_str'] = products_df['project_ids'].apply(lambda x: ' '.join(x))
-        products_df['weighed_project_id'] = (products_df.projectId.apply(lambda x : x+' ') * products_df.top_score.apply(lambda x : int(x*10))).tolist()
-        products_df['weighed_style'] = (products_df.top_style.apply(lambda x : x+' ') * products_df.top_score.apply(lambda x : int(x*10))).tolist()
+        products_df['project_ids_str'] = products_df['project_ids'].apply(self.string_join)
+        products_df['weighed_project_id'] = (products_df.projectId.apply(lambda x : str(x)+' ') * products_df.top_score.apply(self.get_top_score_weight)).tolist()
+        products_df['weighed_style'] = (products_df.top_style.apply(lambda x : str(x)+' ') * products_df.top_score.apply(self.get_top_score_weight)).tolist()
         products_df['new_tag'] = list(
                             zip(
                                 products_df[f'top_style_{self.style_ths_str}'].tolist(), 
@@ -49,8 +49,26 @@ class SEARCH_RECOMMEND:
         products_df['new_tag'] = products_df['new_tag'].apply(self.reduce_newtag)
         products_df['new_tag'] = products_df['new_tag'].apply(lambda x: ' '.join(x))
         products_df['color'] = products_df['color'].apply(self.extract_color)
+        
+        products_df_ = products_df[~products_df['projectId'].isna()]
+        products_df_new = products_df[products_df['projectId'].isna()]
+        products_df_new['new_tag'] = products_df_new['tags'].apply(self.reduce_newtag).apply(lambda x: ' '.join(x))
+        
+        products_df = pd.concat((products_df_, products_df_new))
 
         return products_df
+    
+    def string_join(self, x):
+        try:
+            return ' '.join(x)
+        except:
+            return ''
+
+    def get_top_score_weight(self, x):
+        try:
+            return int(x*10)
+        except:
+            return 0
     
     def extract_color(self, x):
         if x:
@@ -63,8 +81,10 @@ class SEARCH_RECOMMEND:
         for tag in x:
             if type(tag) == str:
                 newtag.append(tag)
-            else:
+            elif type(tag) == list:
                 newtag.extend(tag)
+            else:
+                pass
         return newtag
     
     def add_item_in_user_item_set(self, prod, verbose=True):
@@ -208,7 +228,7 @@ class SEARCH_RECOMMEND:
             # 추천 검색 결과 저장 및 보여주기 => csv 파일, png 파일로 저장
             self.save_result(prod, topn=topn, base_path=base_path, verbose=verbose)
         
-        return id_, prod, self.project_id, self.result['name'].tolist(), self.result['product_id'].tolist(), self.result['project_ids'].tolist(), self.result['similarity'].tolist()
+        return id_, prod, prod_cat, self.project_id, self.result['name'].tolist(), self.result['product_id'].tolist(), self.result['project_ids'].tolist(), self.result['similarity'].tolist()
         
     def save_result(self, prod, topn, base_path=None, verbose=True):
         """
