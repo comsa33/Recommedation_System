@@ -21,10 +21,10 @@ class Preprocess:
         self.item_json = self.read_json(item).reset_index(drop=True)
         self.products_json = self.read_json(products).reset_index(drop=True) # products json duplicated deleted
         self.category_json = self.read_json2(category).reset_index(drop=True)
-        self.best_item, self.category, self.products_4, self.products_b = self.preprocess(self.best_json, 
-                                                                           self.item_json, 
-                                                                           self.products_json, 
-                                                                           self.category_json)
+        self.best_item, self.category, self.products_4, self.products_b, self.products = self.preprocess(self.best_json, 
+                                                                                                       self.item_json, 
+                                                                                                       self.products_json, 
+                                                                                                       self.category_json)
 
     def read_json(self,json_file):
         df = pd.DataFrame()
@@ -102,6 +102,7 @@ class Preprocess:
                                prod_tags_df, 
                                left_on='product_id', 
                                right_on='_id').drop(['_id'], axis=1)
+        
         products_df = pd.merge(products_df, 
                                products_df['product_id'].value_counts().reset_index(),
                                # values_counts() 아이템이 몇개 사용 되었는지 확인하기 위함
@@ -152,8 +153,6 @@ class Preprocess:
 
         cat_df.columns = ['name', 'cat_ids', 'cat_names']
         
-        # cat_df = cat_df[['name', 'cat_ids', 'cat_names']]
-        
         self.products_json['category_name'] = self.products_json['categories'].apply(lambda x: x[0] if len(x) > 0 else np.nan)
         # products_json에서 categories list값들 빼와서 category_name 으로 지정
         prod_cat_df = pd.merge(self.products_json[['category_name',
@@ -170,39 +169,57 @@ class Preprocess:
         #products_json 에서 13개의 enterprise_id 있기에 원하는 2개의 enterpriseId 값만 추출해서 concat
         
         #사용할 컬럼만 추출해서 merge
-        category_df = pd.merge(self.products_json[['_id', 'name', 'tags', 'color', 'dimensions', 'images']], 
+        category_df = pd.merge(self.products_json[['_id', 'name', 'tags','color' ,'dimensions', 'images']], 
                                prod_cat_df[['item_name', 'product_id', 'enterpriseId', 'category','cat_names']], 
                                 left_on = '_id',
-                                right_on = 'product_id').drop(['_id'], axis=1)
+                                right_on = 'product_id').drop(['product_id'], axis=1).rename(columns={'_id':'product_id'}).reset_index(drop=True)
         #사용할 컬럼만 추출해서 merge
         products_df = pd.merge(products_df[['projectId', 'top_style_1', 'top_style', 'top_score',
                                             'awesome_score', 'product_id', 'use_count']], 
                                category_df, 
-                               on='product_id')
+                               how='outer').reset_index(drop=True)
         
         # products_df['projectId'] = products_df['projectId'].apply(lambda x: x.lower())
         
         products_df_4 = products_df[products_df['enterpriseId'] == ent1].reset_index(drop=True)
         #Delete useless category 
+        products_df_4_new = products_df_4[pd.isnull(products_df_4['projectId'])]
+        
         delete_category = ['Construction', 'Appliances', 'Bathroom', 'Kitchen', 'Outdoor']
         for i in delete_category:    
             index = products_df_4[products_df_4['category'] == i].index
             products_df_4 = products_df_4.drop(index=index).reset_index(drop=True)
+            
+            new_index = products_df_4_new[products_df_4_new['category'] == i].index
+            products_df_4_new = products_df_4_new.drop(index=new_index).reset_index(drop=True)
         
         item_count_in_project = products_df_4.groupby(['projectId'])['product_id'].count().reset_index().rename(columns={'product_id':'item_count_in_project'})
+        
         products_df_4 = pd.merge(products_df_4, item_count_in_project, on='projectId')
         products_df_4 = products_df_4[products_df_4['item_count_in_project'] > 2].reset_index(drop=True)
         
         products_df_b = products_df[products_df['enterpriseId'] == ent2].reset_index(drop=True)
+        
+        products_df_b_new = products_df_b[pd.isnull(products_df_b['projectId'])]
         #Delete useless category 
         delete_category = ['문/창문', '가전', '주방싱크/욕실', '파티션/구조물']
         for i in delete_category:    
             index = products_df_b[products_df_b['category'] == i].index
             products_df_b = products_df_b.drop(index=index).reset_index(drop=True)
             
+            new_index = products_df_b_new[products_df_b_new['category'] == i].index
+            products_df_b_new = products_df_b_new.drop(index=new_index).reset_index(drop=True)
+        
         item_count_in_project = products_df_b.groupby(['projectId'])['product_id'].count().reset_index().rename(columns={'product_id':'item_count_in_project'})
+        
+        products_df_b_new = products_df_b[pd.isnull(products_df_b['projectId'])]
+
+        
         products_df_b = pd.merge(products_df_b, item_count_in_project, on='projectId')
         products_df_b = products_df_b[products_df_b['item_count_in_project'] > 2].reset_index(drop=True)
+
+        products_df_4 = pd.concat([products_df_4, products_df_4_new])
+        products_df_b = pd.concat([products_df_b, products_df_b_new])
         # templates['projectId'] = templates['projectId'].apply(lambda x: x.lower())
         
-        return templates, category_df, products_df_4, products_df_b
+        return templates, category_df, products_df_4, products_df_b ,products_df
