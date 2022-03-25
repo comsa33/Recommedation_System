@@ -37,26 +37,39 @@ class SEARCH_RECOMMEND:
         products_df['project_ids_str'] = products_df['project_ids'].apply(self.string_join)
         products_df['weighed_project_id'] = (products_df.projectId.apply(lambda x : str(x)+' ') * products_df.top_score.apply(self.get_top_score_weight)).tolist()
         products_df['weighed_style'] = (products_df.top_style.apply(lambda x : str(x)+' ') * products_df.top_score.apply(self.get_top_score_weight)).tolist()
+        products_df['color'] = products_df['color'].apply(self.extract_color)
         products_df['new_tag'] = list(
                             zip(
                                 products_df[f'top_style_{self.style_ths_str}'].tolist(), 
                                 products_df['weighed_style'].tolist(), 
-                                products_df['tags'].apply(lambda x: random.sample(x, int(len(x)*0.2))).tolist(),
+                                products_df['tags'].apply(self.random_sample_tags).tolist(),
                                 products_df['weighed_project_id'].tolist(),
                                 products_df['project_ids_str'].tolist(),
+                                products_df['color'].tolist(),
+                                # products_df['name'].tolist(),
                                 )
                             )
         products_df['new_tag'] = products_df['new_tag'].apply(self.reduce_newtag)
         products_df['new_tag'] = products_df['new_tag'].apply(lambda x: ' '.join(x))
-        products_df['color'] = products_df['color'].apply(self.extract_color)
         
         products_df_ = products_df[~products_df['projectId'].isna()]
         products_df_new = products_df[products_df['projectId'].isna()]
-        products_df_new['new_tag'] = products_df_new['tags'].apply(self.reduce_newtag).apply(lambda x: ' '.join(x))
+        products_df_new['new_tag'] = list(
+                            zip(
+                                products_df_new['tags'].tolist(),
+                                # products_df_new['color'].tolist(),
+                                products_df_new['category'].tolist(),
+                                products_df_new['name'].tolist(),
+                                )
+                            )
+        products_df_new['new_tag'] = products_df_new['new_tag'].apply(self.reduce_newtag).apply(lambda x: ' '.join(x))
         
         products_df = pd.concat((products_df_, products_df_new))
 
         return products_df
+    
+    def random_sample_tags(self, x):
+        return random.sample(x, int(len(x)*0.2))
     
     def string_join(self, x):
         try:
