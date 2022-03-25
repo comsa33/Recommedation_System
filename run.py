@@ -324,7 +324,7 @@ if __name__ == '__main__':
     base_bath = '2022-03-14/'  # 데이터 기본 경로 (필요시 변경)
     best = glob(base_bath+'best*.json')
     item = glob(base_bath+'item*.json')
-    products = glob(base_bath+'prod*.json')
+    products = glob(base_bath+'*prod*.json')
     category = glob(base_bath+'cate*.json')
     
     # json => DataFrame 데이터 불러오기
