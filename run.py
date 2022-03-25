@@ -110,7 +110,8 @@ class SEARCH_RECOMMEND:
         id_ = self.df_[self.df_['name'] == prod]['product_id'].values[0]
         cat_ = self.df_[self.df_['name'] == prod]['category'].values[0]
         self.user_item_set.add((id_, cat_))
-        self.cold_start = False
+        if len(self.user_item_set) > 1:
+            self.cold_start = False
         if verbose:
             print(f'사용자 님이 현재 선택한 아이템 목록 : {self.user_item_set}')
         if len(self.user_item_set) > prev_len:
@@ -130,7 +131,7 @@ class SEARCH_RECOMMEND:
         if verbose:
             print(f'사용자 님의 현재 남아있는 선택된 아이템 목록 : {self.user_item_set}')
         # 사용자 목록이 비게 되면 콜드스타트
-        if len(self.user_item_set) > 1:
+        if len(self.user_item_set) < 1:
             self.cold_start = True
         if len(self.user_item_set) < prev_len:
             self.user_item_len -= 1
