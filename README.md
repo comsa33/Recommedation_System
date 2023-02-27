@@ -1,4 +1,4 @@
-# 아키드로우 사용자 추천시스템
+# 사용자 추천시스템
 ## Environment
   - MacOS, Windows
   - Python 3.8
